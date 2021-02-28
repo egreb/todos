@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"path/filepath"
+
+	"egreb.net/todos/routes"
 )
 
 func main() {
@@ -24,33 +25,10 @@ func run(args []string) error {
 		return err
 	}
 	addr := fmt.Sprintf("0.0.0.0:%d", *port)
-	srv, err := newServer()
+	srv, err := routes.NewServer()
 	if err != nil {
 		return err
 	}
 	fmt.Printf("server listening on :%d\n", *port)
 	return http.ListenAndServe(addr, srv)
-}
-
-type server struct {
-	mux *http.ServeMux
-}
-
-func newServer() (*server, error) {
-	srv := &server{
-		mux: http.NewServeMux(),
-	}
-
-	srv.mux.HandleFunc("/", srv.handleIndex())
-	return srv, nil
-}
-
-func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	s.mux.ServeHTTP(w, r)
-}
-
-func (s *server) handleIndex() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, filepath.Join("public", "index.html"))
-	}
 }
