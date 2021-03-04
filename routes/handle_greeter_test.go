@@ -1,36 +1,36 @@
 package routes
 
 import (
-	"io/ioutil"
-	"net/http"
-	"net/http/httptest"
-	"strings"
+	"context"
+	"fmt"
 	"testing"
-	"time"
 
+	"egreb.net/todos/generated"
 	"github.com/matryer/is"
 )
 
 func TestHandleGreeting(t *testing.T) {
 	is := is.New(t)
+	gs := GreeterService{}
 
-	srv, err := NewServer()
-	is.NoErr(err)
-
-	hsrv := httptest.NewServer(srv)
-	defer hsrv.Close()
-
-	req, err := http.NewRequest("post", hsrv.URL+"/api/GreeterService/Greet", strings.NewReader("El"))
-	is.NoErr(err)
-	client := &http.Client{
-		Timeout: 1 * time.Minute,
+	ctx := context.Background()
+	req := generated.GreetRequest{
+		Name: "Toby",
 	}
-
-	resp, err := client.Do(req)
+	resp, err := gs.Greet(ctx, req)
 	is.NoErr(err)
-	defer resp.Body.Close()
+	is.Equal(resp.Greeting, "Hello "+"Toby")
+}
 
-	b, err := ioutil.ReadAll(resp.Body)
-	is.NoErr(err)
-	is.Equal(string(b), `Well 'ello there, El.`)
+func TestEmptyHandleGreeting(t *testing.T) {
+	is := is.New(t)
+	gs := GreeterService{}
+
+	ctx := context.Background()
+	req := generated.GreetRequest{
+		Name: "",
+	}
+	resp, err := gs.Greet(ctx, req)
+	is.Equal(fmt.Errorf("Name cannot be empty"), err)
+	is.Equal(resp, nil)
 }
