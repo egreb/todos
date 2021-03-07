@@ -7,6 +7,8 @@ import (
 	"net/http"
 
 	"github.com/pacedotdev/oto/otohttp"
+
+	todo "egreb.net/todos/todo"
 )
 
 // GreeterService makes nice greetings.
@@ -14,6 +16,13 @@ type GreeterService interface {
 
 	// Greet makes a greeting.
 	Greet(context.Context, GreetRequest) (*GreetResponse, error)
+}
+
+// TodoService create, read, update or delete.
+type TodoService interface {
+
+	// Greet makes a greeting.
+	Get(context.Context, GetTodoRequest) (*GetTodoResponse, error)
 }
 
 type greeterServiceServer struct {
@@ -45,6 +54,58 @@ func (s *greeterServiceServer) handleGreet(w http.ResponseWriter, r *http.Reques
 		s.server.OnErr(w, r, err)
 		return
 	}
+}
+
+type todoServiceServer struct {
+	server      *otohttp.Server
+	todoService TodoService
+}
+
+// Register adds the TodoService to the otohttp.Server.
+func RegisterTodoService(server *otohttp.Server, todoService TodoService) {
+	handler := &todoServiceServer{
+		server:      server,
+		todoService: todoService,
+	}
+	server.Register("TodoService", "Get", handler.handleGet)
+}
+
+func (s *todoServiceServer) handleGet(w http.ResponseWriter, r *http.Request) {
+	var request GetTodoRequest
+	if err := otohttp.Decode(r, &request); err != nil {
+		s.server.OnErr(w, r, err)
+		return
+	}
+	response, err := s.todoService.Get(r.Context(), request)
+	if err != nil {
+		s.server.OnErr(w, r, err)
+		return
+	}
+	if err := otohttp.Encode(w, r, http.StatusOK, response); err != nil {
+		s.server.OnErr(w, r, err)
+		return
+	}
+}
+
+// GetTodoRequest based by id
+type GetTodoRequest struct {
+	ID int `json:"id"`
+}
+
+type Todo struct {
+	ID          int    `json:"id"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Completed   bool   `json:"completed"`
+	CreatedAt   string `json:"createdAt"`
+	UpdatedAt   string `json:"updatedAt"`
+}
+
+// GetTodoResponse returns the todo.
+type GetTodoResponse struct {
+	Todo todo.Todo `json:"todo"`
+	// Error is string explaining what went wrong. Empty if everything was fine.
+	Error string `json:"error,omitempty"`
 }
 
 // GreetRequest is the request object for GreeterService.Greet.

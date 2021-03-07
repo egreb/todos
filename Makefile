@@ -1,5 +1,5 @@
 generate:
-	rm -rf && mkdir generated
+	rm -rf generated && mkdir generated
 	oto -template ./templates/server.go.plush \
 			-out ./generated/oto.gen.go \
 			-ignore Ignorer \

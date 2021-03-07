@@ -15,8 +15,6 @@ func NewServer() (*Server, error) {
 		Mux: http.NewServeMux(),
 	}
 
-	srv.routes()
-
 	return srv, nil
 }
 

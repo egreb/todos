@@ -3,9 +3,11 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 
+	"egreb.net/todos/database"
 	"egreb.net/todos/routes"
 )
 
@@ -17,6 +19,12 @@ func main() {
 }
 
 func run(args []string) error {
+	db := database.Connect()
+	if err := database.CreateSchema(db); err != nil {
+		log.Fatal("Could not connect to the database", err)
+	}
+	defer db.Close()
+
 	flags := flag.NewFlagSet(args[0], flag.ContinueOnError)
 	var (
 		port = flags.Int("port", 8080, "port to listen on")
@@ -29,6 +37,7 @@ func run(args []string) error {
 	if err != nil {
 		return err
 	}
+	srv.Routes(db)
 	fmt.Printf("server listening on :%d\n", *port)
 	return http.ListenAndServe(addr, srv)
 }

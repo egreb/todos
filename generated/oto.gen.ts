@@ -50,7 +50,126 @@ export class GreeterService {
 	
 }
 
+// TodoService create, read, update or delete.
+export class TodoService {
+	constructor(readonly client: Client) {}
+	
+	// Greet makes a greeting.
+	async get(getTodoRequest: GetTodoRequest = null) {
+		if (getTodoRequest == null) {
+			getTodoRequest = new GetTodoRequest();
+		}
+		const headers: HeadersInit = new Headers();
+		headers.set('Accept', 'application/json');
+		headers.set('Content-Type', 'application/json');
+		if (this.client.headers) {
+			await this.client.headers(headers);
+		}
+		const response = await fetch(this.client.basepath + 'TodoService.Get', {
+			method: 'POST',
+			headers: headers,
+			body: JSON.stringify(getTodoRequest),
+		})
+		if (response.status !== 200) {
+			throw new Error(`TodoService.Get: ${response.status} ${response.statusText}`);
+		}
+		return response.json().then((json) => {
+			if (json.error) {
+				throw new Error(json.error);
+			}
+			return new GetTodoResponse(json);
+		})
+	}
+	
+}
 
+
+
+// GetTodoRequest based by id
+export class GetTodoRequest {
+	constructor(data?: any) {
+		if (data) {
+		
+			
+			this.id = data.id;
+			
+		
+		}
+	}
+
+		id: number;
+
+}
+
+export class Todo {
+	constructor(data?: any) {
+		if (data) {
+		
+			
+			this.id = data.id;
+			
+		
+			
+			this.title = data.title;
+			
+		
+			
+			this.description = data.description;
+			
+		
+			
+			this.completed = data.completed;
+			
+		
+			
+			this.createdAt = data.createdAt;
+			
+		
+			
+			this.updatedAt = data.updatedAt;
+			
+		
+		}
+	}
+
+		id: number;
+
+		title: string;
+
+		description: string;
+
+		completed: boolean;
+
+		createdAt: string;
+
+		updatedAt: string;
+
+}
+
+// GetTodoResponse returns the todo.
+export class GetTodoResponse {
+	constructor(data?: any) {
+		if (data) {
+		
+			
+				
+					this.todo = new Todo(data.todo);
+				
+			
+		
+			
+			this.error = data.error;
+			
+		
+		}
+	}
+
+		todo: todo.Todo;
+
+	// Error is string explaining what went wrong. Empty if everything was fine.
+	error: string;
+
+}
 
 // GreetRequest is the request object for GreeterService.Greet.
 export class GreetRequest {
