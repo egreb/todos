@@ -20,7 +20,8 @@ type GreeterService interface {
 
 // TodoService create, read, update or delete.
 type TodoService interface {
-
+	Create(context.Context, CreateTodoRequest) (*CreateTodoResponse, error)
+	Delete(context.Context, DeleteTodoRequest) (*DeleteTodoResponse, error)
 	// Greet makes a greeting.
 	Get(context.Context, GetTodoRequest) (*GetTodoResponse, error)
 }
@@ -67,7 +68,43 @@ func RegisterTodoService(server *otohttp.Server, todoService TodoService) {
 		server:      server,
 		todoService: todoService,
 	}
+	server.Register("TodoService", "Create", handler.handleCreate)
+	server.Register("TodoService", "Delete", handler.handleDelete)
 	server.Register("TodoService", "Get", handler.handleGet)
+}
+
+func (s *todoServiceServer) handleCreate(w http.ResponseWriter, r *http.Request) {
+	var request CreateTodoRequest
+	if err := otohttp.Decode(r, &request); err != nil {
+		s.server.OnErr(w, r, err)
+		return
+	}
+	response, err := s.todoService.Create(r.Context(), request)
+	if err != nil {
+		s.server.OnErr(w, r, err)
+		return
+	}
+	if err := otohttp.Encode(w, r, http.StatusOK, response); err != nil {
+		s.server.OnErr(w, r, err)
+		return
+	}
+}
+
+func (s *todoServiceServer) handleDelete(w http.ResponseWriter, r *http.Request) {
+	var request DeleteTodoRequest
+	if err := otohttp.Decode(r, &request); err != nil {
+		s.server.OnErr(w, r, err)
+		return
+	}
+	response, err := s.todoService.Delete(r.Context(), request)
+	if err != nil {
+		s.server.OnErr(w, r, err)
+		return
+	}
+	if err := otohttp.Encode(w, r, http.StatusOK, response); err != nil {
+		s.server.OnErr(w, r, err)
+		return
+	}
 }
 
 func (s *todoServiceServer) handleGet(w http.ResponseWriter, r *http.Request) {
@@ -87,9 +124,9 @@ func (s *todoServiceServer) handleGet(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// GetTodoRequest based by id
-type GetTodoRequest struct {
-	ID int `json:"id"`
+type CreateTodoRequest struct {
+	Title       string `json:"title"`
+	Description string `json:"description"`
 }
 
 type Todo struct {
@@ -99,6 +136,27 @@ type Todo struct {
 	Completed   bool   `json:"completed"`
 	CreatedAt   string `json:"createdAt"`
 	UpdatedAt   string `json:"updatedAt"`
+}
+
+type CreateTodoResponse struct {
+	Todo todo.Todo `json:"todo"`
+	// Error is string explaining what went wrong. Empty if everything was fine.
+	Error string `json:"error,omitempty"`
+}
+
+type DeleteTodoRequest struct {
+	TodoId int `json:"todoID"`
+}
+
+type DeleteTodoResponse struct {
+	Success bool `json:"success"`
+	// Error is string explaining what went wrong. Empty if everything was fine.
+	Error string `json:"error,omitempty"`
+}
+
+// GetTodoRequest based by id
+type GetTodoRequest struct {
+	ID int `json:"id"`
 }
 
 // GetTodoResponse returns the todo.

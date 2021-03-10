@@ -8,7 +8,6 @@ import (
 	"egreb.net/todos/database"
 	"egreb.net/todos/generated"
 	"egreb.net/todos/routes"
-	"egreb.net/todos/todo"
 	"github.com/docker/go-connections/nat"
 	"github.com/go-pg/pg/v10"
 	"github.com/matryer/is"
@@ -16,44 +15,109 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 )
 
-func postgresRequest(identifier string) (testcontainers.ContainerRequest, nat.Port) {
-	port, _ := nat.NewPort("tcp", "5432")
-	dbName := fmt.Sprintf("%s-db", identifier)
-	req := testcontainers.ContainerRequest{
-		Name:         dbName,
-		Image:        "postgres:12.3-alpine",
-		ExposedPorts: []string{port.Port()},
-		Env: map[string]string{
-			"POSTGRES_DB":               "test_db",
-			"POSTGRES_HOST_AUTH_METHOD": "trust",
-		},
-		Networks:   []string{identifier},
-		WaitingFor: wait.ForListeningPort(port),
+func CreateTestContainer(ctx context.Context, dbname string) (testcontainers.Container, *pg.DB, error) {
+	var env = map[string]string{
+		"POSTGRES_PASSWORD": "password",
+		"POSTGRES_USER":     "postgres",
+		"POSTGRES_DB":       dbname,
 	}
 
-	return req, port
+	port, _ := nat.NewPort("tcp", "5432")
+	req := testcontainers.GenericContainerRequest{
+		ContainerRequest: testcontainers.ContainerRequest{
+			Image:        "postgres:12.3-alpine",
+			ExposedPorts: []string{port.Port()},
+			Env:          env,
+			WaitingFor:   wait.ForListeningPort(port),
+		},
+		Started: true,
+	}
+	container, err := testcontainers.GenericContainer(ctx, req)
+	if err != nil {
+		return container, nil, fmt.Errorf("failed to start container: %s", err)
+	}
+
+	mappedPort, err := container.MappedPort(ctx, nat.Port(port))
+	if err != nil {
+		return container, nil, fmt.Errorf("failed to get container external port: %s", err)
+	}
+
+	url := fmt.Sprintf("localhost:%s", mappedPort.Port())
+	db := pg.Connect(&pg.Options{
+		User:     "postgres",
+		Password: "password",
+		Database: dbname,
+		Addr:     url,
+	})
+	if err != nil {
+		return container, db, fmt.Errorf("failed to establish database connection: %s", err)
+	}
+
+	return container, db, nil
 }
 
-func testTodoGet(t *testing.T) {
+func TestTodoGet(t *testing.T) {
 	is := is.New(t)
 	ctx := context.Background()
-	req, _ := postgresRequest("foo")
-	c, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
-		ContainerRequest: req,
-		Started:          true,
-	})
-	defer c.Terminate(ctx)
+	container, db, err := CreateTestContainer(ctx, "foo")
+	defer container.Terminate(ctx)
 	is.NoErr(err)
 
-	db := pg.Connect(&pg.Options{
-		Database: "test_db",
-	})
-	database.CreateSchema(db)
-
+	err = database.CreateSchema(db)
+	is.NoErr(err)
 	service := routes.TodoService{DB: db}
 
-	res, err := service.Get(ctx, generated.GetTodoRequest{ID: -1})
+	todoID := -1
+	res, err := service.Get(ctx, generated.GetTodoRequest{ID: todoID})
+	is.True(err != nil)
+	is.Equal(res.Error, fmt.Sprintf("Todo by id %v not found", todoID))
+}
+
+func TestTodoCreate(t *testing.T) {
+	is := is.New(t)
+	ctx := context.Background()
+	container, db, err := CreateTestContainer(ctx, "createTodoDb")
+	defer container.Terminate(ctx)
 	is.NoErr(err)
 
-	is.Equal(res.Todo, todo.Todo{ID: -1})
+	err = database.CreateSchema(db)
+	is.NoErr(err)
+	service := routes.TodoService{DB: db}
+
+	res, err := service.Create(ctx, generated.CreateTodoRequest{
+		Title:       "Test create todo",
+		Description: "Test todo description",
+	})
+	is.NoErr(err)
+
+	is.True(res != nil)
+	is.True(res.Error == "")
+
+	is.True(res.Todo.ID > 0)
+}
+
+func TestTodoDelete(t *testing.T) {
+	is := is.New(t)
+	ctx := context.Background()
+	container, db, err := CreateTestContainer(ctx, "createTodoDb")
+	defer container.Terminate(ctx)
+	is.NoErr(err)
+
+	err = database.CreateSchema(db)
+	is.NoErr(err)
+	service := routes.TodoService{DB: db}
+
+	createResult, err := service.Create(ctx, generated.CreateTodoRequest{
+		Title:       "Test create todo",
+		Description: "Test todo description",
+	})
+	is.NoErr(err)
+
+	deleteResult, err := service.Delete(ctx, generated.DeleteTodoRequest{TodoId: createResult.Todo.ID})
+	is.NoErr(err)
+	is.True(deleteResult.Success)
+
+	deleteResult2, err := service.Delete(ctx, generated.DeleteTodoRequest{TodoId: -1})
+	is.NoErr(err)
+	is.True(deleteResult2.Success == false)
 }

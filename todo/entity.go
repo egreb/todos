@@ -9,9 +9,9 @@ import (
 type Entity struct {
 	tableName   struct{} `pg:"todos"`
 	ID          int      `pg:"id,pk"`
-	Title       string   `pg:",notnull"`
+	Title       string   `pg:"title,notnull"`
 	Description string
-	Completed   bool      `pg:",notnull"`
+	Completed   bool      `sql:"completed,notnull"`
 	CreatedAt   time.Time `pg:"created_at,default:now()"`
 	UpdatedAt   time.Time `pg:"updated_at"`
 }

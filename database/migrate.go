@@ -8,8 +8,6 @@ import (
 
 // CreateSchema run migrations
 func CreateSchema(db *pg.DB) error {
-	defer db.Close()
-
 	models := []interface{}{
 		(*todo.Entity)(nil),
 	}

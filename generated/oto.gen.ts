@@ -54,6 +54,58 @@ export class GreeterService {
 export class TodoService {
 	constructor(readonly client: Client) {}
 	
+		async create(createTodoRequest: CreateTodoRequest = null) {
+		if (createTodoRequest == null) {
+			createTodoRequest = new CreateTodoRequest();
+		}
+		const headers: HeadersInit = new Headers();
+		headers.set('Accept', 'application/json');
+		headers.set('Content-Type', 'application/json');
+		if (this.client.headers) {
+			await this.client.headers(headers);
+		}
+		const response = await fetch(this.client.basepath + 'TodoService.Create', {
+			method: 'POST',
+			headers: headers,
+			body: JSON.stringify(createTodoRequest),
+		})
+		if (response.status !== 200) {
+			throw new Error(`TodoService.Create: ${response.status} ${response.statusText}`);
+		}
+		return response.json().then((json) => {
+			if (json.error) {
+				throw new Error(json.error);
+			}
+			return new CreateTodoResponse(json);
+		})
+	}
+	
+		async delete(deleteTodoRequest: DeleteTodoRequest = null) {
+		if (deleteTodoRequest == null) {
+			deleteTodoRequest = new DeleteTodoRequest();
+		}
+		const headers: HeadersInit = new Headers();
+		headers.set('Accept', 'application/json');
+		headers.set('Content-Type', 'application/json');
+		if (this.client.headers) {
+			await this.client.headers(headers);
+		}
+		const response = await fetch(this.client.basepath + 'TodoService.Delete', {
+			method: 'POST',
+			headers: headers,
+			body: JSON.stringify(deleteTodoRequest),
+		})
+		if (response.status !== 200) {
+			throw new Error(`TodoService.Delete: ${response.status} ${response.statusText}`);
+		}
+		return response.json().then((json) => {
+			if (json.error) {
+				throw new Error(json.error);
+			}
+			return new DeleteTodoResponse(json);
+		})
+	}
+	
 	// Greet makes a greeting.
 	async get(getTodoRequest: GetTodoRequest = null) {
 		if (getTodoRequest == null) {
@@ -85,19 +137,24 @@ export class TodoService {
 
 
 
-// GetTodoRequest based by id
-export class GetTodoRequest {
+export class CreateTodoRequest {
 	constructor(data?: any) {
 		if (data) {
 		
 			
-			this.id = data.id;
+			this.title = data.title;
+			
+		
+			
+			this.description = data.description;
 			
 		
 		}
 	}
 
-		id: number;
+		title: string;
+
+		description: string;
 
 }
 
@@ -143,6 +200,83 @@ export class Todo {
 		createdAt: string;
 
 		updatedAt: string;
+
+}
+
+export class CreateTodoResponse {
+	constructor(data?: any) {
+		if (data) {
+		
+			
+				
+					this.todo = new Todo(data.todo);
+				
+			
+		
+			
+			this.error = data.error;
+			
+		
+		}
+	}
+
+		todo: todo.Todo;
+
+	// Error is string explaining what went wrong. Empty if everything was fine.
+	error: string;
+
+}
+
+export class DeleteTodoRequest {
+	constructor(data?: any) {
+		if (data) {
+		
+			
+			this.todoID = data.todoID;
+			
+		
+		}
+	}
+
+		todoID: number;
+
+}
+
+export class DeleteTodoResponse {
+	constructor(data?: any) {
+		if (data) {
+		
+			
+			this.success = data.success;
+			
+		
+			
+			this.error = data.error;
+			
+		
+		}
+	}
+
+		success: boolean;
+
+	// Error is string explaining what went wrong. Empty if everything was fine.
+	error: string;
+
+}
+
+// GetTodoRequest based by id
+export class GetTodoRequest {
+	constructor(data?: any) {
+		if (data) {
+		
+			
+			this.id = data.id;
+			
+		
+		}
+	}
+
+		id: number;
 
 }
 
