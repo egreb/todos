@@ -58,6 +58,20 @@ func (t TodoService) Create(ctx context.Context, req generated.CreateTodoRequest
 	}, nil
 }
 
+// Create Todo with Title and optional Description
+func (t TodoService) Update(ctx context.Context, req generated.UpdateTodoRequest) (*generated.UpdateTodoResponse, error) {
+	entity := req.Todo.ToEntity()
+	_, err := t.DB.Model(&entity).Set("title = ?title, description = ?description, completed = ?completed").Where("id = ?id").Update()
+	if err != nil {
+		return nil, err
+	}
+
+	todo := entity.ToModel()
+	return &generated.UpdateTodoResponse{
+		Todo: todo,
+	}, nil
+}
+
 // Delete Todo by Id
 func (t TodoService) Delete(ctx context.Context, req generated.DeleteTodoRequest) (*generated.DeleteTodoResponse, error) {
 	entity := &todo.Entity{ID: req.TodoId}
@@ -78,11 +92,11 @@ func (t TodoService) GetAll(ctx context.Context, req generated.GetAllTodosReques
 		entities []todo.Entity
 		err      error
 	)
+	query := t.DB.Model(&entities)
 	if req.Completed != nil {
-		err = t.DB.Model(&entities).Where("Completed = ?", *req.Completed).Order("created_at desc").Select()
-	} else {
-		err = t.DB.Model(&entities).Order("created_at desc").Select()
+		query = query.Where("Completed = ?", *req.Completed)
 	}
+	err = query.Order("created_at desc").Select()
 	if err != nil {
 		return &generated.GetAllTodosResponse{
 				Error: "Could not fetch todos",

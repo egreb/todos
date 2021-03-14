@@ -75,6 +75,38 @@ func TestTodoGet(t *testing.T) {
 	is.Equal(res.Error, fmt.Sprintf("Todo by id %v not found", todoID))
 }
 
+func TestTodoUpdate(t *testing.T) {
+	is := is.New(t)
+	ctx := context.Background()
+	container, db, err := CreateTestContainer(ctx, "createTodoDb")
+	defer container.Terminate(ctx)
+	is.NoErr(err)
+
+	err = database.CreateSchema(db)
+	is.NoErr(err)
+	service := routes.TodoService{DB: db}
+
+	res, err := service.Create(ctx, generated.CreateTodoRequest{
+		Title: "Test create todo",
+	})
+	is.NoErr(err)
+
+	is.True(res != nil)
+	is.True(res.Error == "")
+	is.True(res.Todo.ID > 0)
+
+	updateTodo := res.Todo
+	updateTodo.Title = "Test updated todo"
+	updateTodo.Completed = true
+
+	resUpdate, err := service.Update(ctx, generated.UpdateTodoRequest{
+		Todo: updateTodo,
+	})
+	is.NoErr(err)
+	is.True(resUpdate.Todo.UpdatedAt != res.Todo.UpdatedAt)
+	is.Equal(resUpdate.Todo.Title, "Test updated todo")
+}
+
 func TestTodoCreate(t *testing.T) {
 	is := is.New(t)
 	ctx := context.Background()

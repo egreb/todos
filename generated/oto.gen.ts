@@ -158,6 +158,32 @@ export class TodoService {
 		})
 	}
 	
+		async update(updateTodoRequest: UpdateTodoRequest = null) {
+		if (updateTodoRequest == null) {
+			updateTodoRequest = new UpdateTodoRequest();
+		}
+		const headers: HeadersInit = new Headers();
+		headers.set('Accept', 'application/json');
+		headers.set('Content-Type', 'application/json');
+		if (this.client.headers) {
+			await this.client.headers(headers);
+		}
+		const response = await fetch(this.client.basepath + 'TodoService.Update', {
+			method: 'POST',
+			headers: headers,
+			body: JSON.stringify(updateTodoRequest),
+		})
+		if (response.status !== 200) {
+			throw new Error(`TodoService.Update: ${response.status} ${response.statusText}`);
+		}
+		return response.json().then((json) => {
+			if (json.error) {
+				throw new Error(json.error);
+			}
+			return new UpdateTodoResponse(json);
+		})
+	}
+	
 }
 
 
@@ -417,6 +443,47 @@ export class GreetResponse {
 
 	// Greeting is the greeting that was generated.
 	greeting: string;
+
+	// Error is string explaining what went wrong. Empty if everything was fine.
+	error: string;
+
+}
+
+export class UpdateTodoRequest {
+	constructor(data?: any) {
+		if (data) {
+		
+			
+				
+					this.todo = new Todo(data.todo);
+				
+			
+		
+		}
+	}
+
+		todo: todo.Todo;
+
+}
+
+export class UpdateTodoResponse {
+	constructor(data?: any) {
+		if (data) {
+		
+			
+				
+					this.todo = new Todo(data.todo);
+				
+			
+		
+			
+			this.error = data.error;
+			
+		
+		}
+	}
+
+		todo: todo.Todo;
 
 	// Error is string explaining what went wrong. Empty if everything was fine.
 	error: string;

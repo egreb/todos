@@ -8,6 +8,7 @@ type TodoService interface {
 	Get(GetTodoRequest) GetTodoResponse
 	Create(CreateTodoRequest) CreateTodoResponse
 	Delete(DeleteTodoRequest) DeleteTodoResponse
+	Update(UpdateTodoRequest) UpdateTodoResponse
 }
 
 // GetAllTodosRequest - needs pagination
@@ -35,14 +36,20 @@ type CreateTodoRequest struct {
 	Description *string
 	Completed   *bool
 }
-
 type CreateTodoResponse struct {
 	Todo todo.Todo
 }
+
+type UpdateTodoRequest struct {
+	Todo todo.Todo
+}
+type UpdateTodoResponse struct {
+	Todo todo.Todo
+}
+
 type DeleteTodoRequest struct {
 	TodoId int
 }
-
 type DeleteTodoResponse struct {
 	Success bool
 }

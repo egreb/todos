@@ -24,6 +24,7 @@ type TodoService interface {
 	Delete(context.Context, DeleteTodoRequest) (*DeleteTodoResponse, error)
 	Get(context.Context, GetTodoRequest) (*GetTodoResponse, error)
 	GetAll(context.Context, GetAllTodosRequest) (*GetAllTodosResponse, error)
+	Update(context.Context, UpdateTodoRequest) (*UpdateTodoResponse, error)
 }
 
 type greeterServiceServer struct {
@@ -72,6 +73,7 @@ func RegisterTodoService(server *otohttp.Server, todoService TodoService) {
 	server.Register("TodoService", "Delete", handler.handleDelete)
 	server.Register("TodoService", "Get", handler.handleGet)
 	server.Register("TodoService", "GetAll", handler.handleGetAll)
+	server.Register("TodoService", "Update", handler.handleUpdate)
 }
 
 func (s *todoServiceServer) handleCreate(w http.ResponseWriter, r *http.Request) {
@@ -132,6 +134,23 @@ func (s *todoServiceServer) handleGetAll(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	response, err := s.todoService.GetAll(r.Context(), request)
+	if err != nil {
+		s.server.OnErr(w, r, err)
+		return
+	}
+	if err := otohttp.Encode(w, r, http.StatusOK, response); err != nil {
+		s.server.OnErr(w, r, err)
+		return
+	}
+}
+
+func (s *todoServiceServer) handleUpdate(w http.ResponseWriter, r *http.Request) {
+	var request UpdateTodoRequest
+	if err := otohttp.Decode(r, &request); err != nil {
+		s.server.OnErr(w, r, err)
+		return
+	}
+	response, err := s.todoService.Update(r.Context(), request)
 	if err != nil {
 		s.server.OnErr(w, r, err)
 		return
@@ -207,6 +226,16 @@ type GreetRequest struct {
 type GreetResponse struct {
 	// Greeting is the greeting that was generated.
 	Greeting string `json:"greeting"`
+	// Error is string explaining what went wrong. Empty if everything was fine.
+	Error string `json:"error,omitempty"`
+}
+
+type UpdateTodoRequest struct {
+	Todo todo.Todo `json:"todo"`
+}
+
+type UpdateTodoResponse struct {
+	Todo todo.Todo `json:"todo"`
 	// Error is string explaining what went wrong. Empty if everything was fine.
 	Error string `json:"error,omitempty"`
 }
