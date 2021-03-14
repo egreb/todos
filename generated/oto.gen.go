@@ -143,8 +143,9 @@ func (s *todoServiceServer) handleGetAll(w http.ResponseWriter, r *http.Request)
 }
 
 type CreateTodoRequest struct {
-	Title       string `json:"title"`
-	Description string `json:"description"`
+	Title       string  `json:"title"`
+	Description *string `json:"description"`
+	Completed   *bool   `json:"completed"`
 }
 
 type Todo struct {
@@ -174,6 +175,7 @@ type DeleteTodoResponse struct {
 
 // GetAllTodosRequest - needs pagination
 type GetAllTodosRequest struct {
+	Completed *bool `json:"completed"`
 }
 
 // GetAllTodosResponse - needs pagination

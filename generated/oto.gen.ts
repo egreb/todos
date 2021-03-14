@@ -174,12 +174,18 @@ export class CreateTodoRequest {
 			this.description = data.description;
 			
 		
+			
+			this.completed = data.completed;
+			
+		
 		}
 	}
 
 		title: string;
 
-		description: string;
+		description: ;
+
+		completed: ;
 
 }
 
@@ -294,8 +300,14 @@ export class GetAllTodosRequest {
 	constructor(data?: any) {
 		if (data) {
 		
+			
+			this.completed = data.completed;
+			
+		
 		}
 	}
+
+		completed: ;
 
 }
 

@@ -87,8 +87,7 @@ func TestTodoCreate(t *testing.T) {
 	service := routes.TodoService{DB: db}
 
 	res, err := service.Create(ctx, generated.CreateTodoRequest{
-		Title:       "Test create todo",
-		Description: "Test todo description",
+		Title: "Test create todo",
 	})
 	is.NoErr(err)
 
@@ -110,8 +109,7 @@ func TestTodoDelete(t *testing.T) {
 	service := routes.TodoService{DB: db}
 
 	createResult, err := service.Create(ctx, generated.CreateTodoRequest{
-		Title:       "Test create todo",
-		Description: "Test todo description",
+		Title: "Test create todo",
 	})
 	is.NoErr(err)
 
@@ -143,13 +141,15 @@ func TestTodoGetAll(t *testing.T) {
 		{
 			Title:       "Test 2",
 			Description: "This is 'Test 2' todo",
+			Completed:   true,
 		},
 	}
 
 	for _, tti := range todosToInsert {
 		_, err = service.Create(ctx, generated.CreateTodoRequest{
 			Title:       tti.Title,
-			Description: tti.Description,
+			Description: &tti.Description,
+			Completed:   &tti.Completed,
 		})
 		is.NoErr(err)
 		time.Sleep(1 * time.Second)
@@ -159,5 +159,13 @@ func TestTodoGetAll(t *testing.T) {
 	is.NoErr(err)
 
 	is.True(len(res.Todos) == len(todosToInsert))
+	is.Equal(res.Todos[0].Title, "Test 2")
+
+	completed := true
+	res, err = service.GetAll(ctx, generated.GetAllTodosRequest{
+		Completed: &completed,
+	})
+	is.NoErr(err)
+	is.True(len(res.Todos) == 1)
 	is.Equal(res.Todos[0].Title, "Test 2")
 }

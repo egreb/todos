@@ -30,10 +30,20 @@ func (t TodoService) Get(ctx context.Context, req generated.GetTodoRequest) (*ge
 
 // Create Todo with Title and optional Description
 func (t TodoService) Create(ctx context.Context, req generated.CreateTodoRequest) (*generated.CreateTodoResponse, error) {
+	var (
+		description = ""
+		completed   = false
+	)
+	if req.Description != nil {
+		description = *req.Description
+	}
+	if req.Completed != nil {
+		completed = *req.Completed
+	}
 	entity := &todo.Entity{
 		Title:       req.Title,
-		Description: req.Description,
-		Completed:   false,
+		Description: description,
+		Completed:   completed,
 	}
 
 	_, err := t.DB.Model(entity).Returning("*").Insert()
@@ -64,8 +74,15 @@ func (t TodoService) Delete(ctx context.Context, req generated.DeleteTodoRequest
 
 // GetAll todos
 func (t TodoService) GetAll(ctx context.Context, req generated.GetAllTodosRequest) (*generated.GetAllTodosResponse, error) {
-	var entities []todo.Entity
-	err := t.DB.Model(&entities).Order("created_at desc").Select()
+	var (
+		entities []todo.Entity
+		err      error
+	)
+	if req.Completed != nil {
+		err = t.DB.Model(&entities).Where("Completed = ?", *req.Completed).Order("created_at desc").Select()
+	} else {
+		err = t.DB.Model(&entities).Order("created_at desc").Select()
+	}
 	if err != nil {
 		return &generated.GetAllTodosResponse{
 				Error: "Could not fetch todos",
