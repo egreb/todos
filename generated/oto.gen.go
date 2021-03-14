@@ -22,8 +22,8 @@ type GreeterService interface {
 type TodoService interface {
 	Create(context.Context, CreateTodoRequest) (*CreateTodoResponse, error)
 	Delete(context.Context, DeleteTodoRequest) (*DeleteTodoResponse, error)
-	// Greet makes a greeting.
 	Get(context.Context, GetTodoRequest) (*GetTodoResponse, error)
+	GetAll(context.Context, GetAllTodosRequest) (*GetAllTodosResponse, error)
 }
 
 type greeterServiceServer struct {
@@ -71,6 +71,7 @@ func RegisterTodoService(server *otohttp.Server, todoService TodoService) {
 	server.Register("TodoService", "Create", handler.handleCreate)
 	server.Register("TodoService", "Delete", handler.handleDelete)
 	server.Register("TodoService", "Get", handler.handleGet)
+	server.Register("TodoService", "GetAll", handler.handleGetAll)
 }
 
 func (s *todoServiceServer) handleCreate(w http.ResponseWriter, r *http.Request) {
@@ -124,6 +125,23 @@ func (s *todoServiceServer) handleGet(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (s *todoServiceServer) handleGetAll(w http.ResponseWriter, r *http.Request) {
+	var request GetAllTodosRequest
+	if err := otohttp.Decode(r, &request); err != nil {
+		s.server.OnErr(w, r, err)
+		return
+	}
+	response, err := s.todoService.GetAll(r.Context(), request)
+	if err != nil {
+		s.server.OnErr(w, r, err)
+		return
+	}
+	if err := otohttp.Encode(w, r, http.StatusOK, response); err != nil {
+		s.server.OnErr(w, r, err)
+		return
+	}
+}
+
 type CreateTodoRequest struct {
 	Title       string `json:"title"`
 	Description string `json:"description"`
@@ -150,6 +168,17 @@ type DeleteTodoRequest struct {
 
 type DeleteTodoResponse struct {
 	Success bool `json:"success"`
+	// Error is string explaining what went wrong. Empty if everything was fine.
+	Error string `json:"error,omitempty"`
+}
+
+// GetAllTodosRequest - needs pagination
+type GetAllTodosRequest struct {
+}
+
+// GetAllTodosResponse - needs pagination
+type GetAllTodosResponse struct {
+	Todos []todo.Todo `json:"todos"`
 	// Error is string explaining what went wrong. Empty if everything was fine.
 	Error string `json:"error,omitempty"`
 }

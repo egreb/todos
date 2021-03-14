@@ -106,8 +106,7 @@ export class TodoService {
 		})
 	}
 	
-	// Greet makes a greeting.
-	async get(getTodoRequest: GetTodoRequest = null) {
+		async get(getTodoRequest: GetTodoRequest = null) {
 		if (getTodoRequest == null) {
 			getTodoRequest = new GetTodoRequest();
 		}
@@ -130,6 +129,32 @@ export class TodoService {
 				throw new Error(json.error);
 			}
 			return new GetTodoResponse(json);
+		})
+	}
+	
+		async getAll(getAllTodosRequest: GetAllTodosRequest = null) {
+		if (getAllTodosRequest == null) {
+			getAllTodosRequest = new GetAllTodosRequest();
+		}
+		const headers: HeadersInit = new Headers();
+		headers.set('Accept', 'application/json');
+		headers.set('Content-Type', 'application/json');
+		if (this.client.headers) {
+			await this.client.headers(headers);
+		}
+		const response = await fetch(this.client.basepath + 'TodoService.GetAll', {
+			method: 'POST',
+			headers: headers,
+			body: JSON.stringify(getAllTodosRequest),
+		})
+		if (response.status !== 200) {
+			throw new Error(`TodoService.GetAll: ${response.status} ${response.statusText}`);
+		}
+		return response.json().then((json) => {
+			if (json.error) {
+				throw new Error(json.error);
+			}
+			return new GetAllTodosResponse(json);
 		})
 	}
 	
@@ -258,6 +283,46 @@ export class DeleteTodoResponse {
 	}
 
 		success: boolean;
+
+	// Error is string explaining what went wrong. Empty if everything was fine.
+	error: string;
+
+}
+
+// GetAllTodosRequest - needs pagination
+export class GetAllTodosRequest {
+	constructor(data?: any) {
+		if (data) {
+		
+		}
+	}
+
+}
+
+// GetAllTodosResponse - needs pagination
+export class GetAllTodosResponse {
+	constructor(data?: any) {
+		if (data) {
+		
+			
+				
+					if (data.todos) {
+						this.todos = new Array<Todo>()
+						for (let i = 0; i < data.todos.length; i++) {
+							this.todos.push(new Todo(data.todos[i]));
+						}
+					}
+				
+			
+		
+			
+			this.error = data.error;
+			
+		
+		}
+	}
+
+		todos: todo.Todo[];
 
 	// Error is string explaining what went wrong. Empty if everything was fine.
 	error: string;

@@ -61,3 +61,24 @@ func (t TodoService) Delete(ctx context.Context, req generated.DeleteTodoRequest
 
 	return &generated.DeleteTodoResponse{Success: true}, nil
 }
+
+// GetAll todos
+func (t TodoService) GetAll(ctx context.Context, req generated.GetAllTodosRequest) (*generated.GetAllTodosResponse, error) {
+	var entities []todo.Entity
+	err := t.DB.Model(&entities).Order("created_at desc").Select()
+	if err != nil {
+		return &generated.GetAllTodosResponse{
+				Error: "Could not fetch todos",
+			},
+			err
+	}
+
+	var todos []todo.Todo
+	for _, e := range entities {
+		todos = append(todos, e.ToModel())
+	}
+
+	return &generated.GetAllTodosResponse{
+		Todos: todos,
+	}, nil
+}

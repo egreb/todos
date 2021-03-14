@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"egreb.net/todos/database"
 	"egreb.net/todos/generated"
 	"egreb.net/todos/routes"
+	"egreb.net/todos/todo"
 	"github.com/docker/go-connections/nat"
 	"github.com/go-pg/pg/v10"
 	"github.com/matryer/is"
@@ -120,4 +122,42 @@ func TestTodoDelete(t *testing.T) {
 	deleteResult2, err := service.Delete(ctx, generated.DeleteTodoRequest{TodoId: -1})
 	is.NoErr(err)
 	is.True(deleteResult2.Success == false)
+}
+
+func TestTodoGetAll(t *testing.T) {
+	is := is.New(t)
+	ctx := context.Background()
+	container, db, err := CreateTestContainer(ctx, "createTodoDb")
+	defer container.Terminate(ctx)
+	is.NoErr(err)
+
+	err = database.CreateSchema(db)
+	is.NoErr(err)
+	service := routes.TodoService{DB: db}
+
+	todosToInsert := []todo.Todo{
+		{
+			Title:       "Test 1",
+			Description: "This is 'Test 1' todo",
+		},
+		{
+			Title:       "Test 2",
+			Description: "This is 'Test 2' todo",
+		},
+	}
+
+	for _, tti := range todosToInsert {
+		_, err = service.Create(ctx, generated.CreateTodoRequest{
+			Title:       tti.Title,
+			Description: tti.Description,
+		})
+		is.NoErr(err)
+		time.Sleep(1 * time.Second)
+	}
+
+	res, err := service.GetAll(ctx, generated.GetAllTodosRequest{})
+	is.NoErr(err)
+
+	is.True(len(res.Todos) == len(todosToInsert))
+	is.Equal(res.Todos[0].Title, "Test 2")
 }
