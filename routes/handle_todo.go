@@ -34,12 +34,12 @@ func (t TodoService) Create(ctx context.Context, req generated.CreateTodoRequest
 		description = ""
 		completed   = false
 	)
-	if req.Description != nil {
-		description = *req.Description
+	if req.Description != "" {
+		description = req.Description
 	}
-	if req.Completed != nil {
-		completed = *req.Completed
-	}
+
+	completed = req.Completed
+
 	entity := &todo.Entity{
 		Title:       req.Title,
 		Description: description,
@@ -92,11 +92,7 @@ func (t TodoService) GetAll(ctx context.Context, req generated.GetAllTodosReques
 		entities []todo.Entity
 		err      error
 	)
-	query := t.DB.Model(&entities)
-	if req.Completed != nil {
-		query = query.Where("Completed = ?", *req.Completed)
-	}
-	err = query.Order("created_at desc").Select()
+	err = t.DB.Model(&entities).Order("created_at desc").Select()
 	if err != nil {
 		return &generated.GetAllTodosResponse{
 				Error: "Could not fetch todos",

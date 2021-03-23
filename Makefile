@@ -7,7 +7,7 @@ generate:
 			./definitions
 	gofmt -w ./generated/oto.gen.go ./generated/oto.gen.go
 	oto -template ./templates/client.ts.plush \
-			-out ./generated/oto.gen.ts \
+			-out ./src/types/oto.gen.ts \
 			-ignore Ignorer \
 			./definitions
 download:

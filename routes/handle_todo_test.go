@@ -180,8 +180,8 @@ func TestTodoGetAll(t *testing.T) {
 	for _, tti := range todosToInsert {
 		_, err = service.Create(ctx, generated.CreateTodoRequest{
 			Title:       tti.Title,
-			Description: &tti.Description,
-			Completed:   &tti.Completed,
+			Description: tti.Description,
+			Completed:   tti.Completed,
 		})
 		is.NoErr(err)
 		time.Sleep(1 * time.Second)
@@ -191,13 +191,5 @@ func TestTodoGetAll(t *testing.T) {
 	is.NoErr(err)
 
 	is.True(len(res.Todos) == len(todosToInsert))
-	is.Equal(res.Todos[0].Title, "Test 2")
-
-	completed := true
-	res, err = service.GetAll(ctx, generated.GetAllTodosRequest{
-		Completed: &completed,
-	})
-	is.NoErr(err)
-	is.True(len(res.Todos) == 1)
 	is.Equal(res.Todos[0].Title, "Test 2")
 }

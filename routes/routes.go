@@ -16,12 +16,11 @@ func (s *Server) Routes(db *pg.DB) {
 	todoHandler := TodoService{DB: db}
 
 	server := otohttp.NewServer()
-	server.Basepath = "/api/"
 
 	generated.RegisterGreeterService(server, g)
 	generated.RegisterTodoService(server, todoHandler)
 
-	s.Mux.Handle("/api/", server)
+	s.Mux.Handle("/oto/", server)
 	s.Mux.Handle("/public/", http.StripPrefix("/public/", http.FileServer(http.Dir("public"))))
 	s.Mux.HandleFunc("/", s.handleIndex())
 }

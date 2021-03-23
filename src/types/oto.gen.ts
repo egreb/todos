@@ -209,9 +209,9 @@ export class CreateTodoRequest {
 
 		title: string;
 
-		description: ;
+		description: string;
 
-		completed: ;
+		completed: boolean;
 
 }
 
@@ -333,7 +333,7 @@ export class GetAllTodosRequest {
 		}
 	}
 
-		completed: ;
+		completed: boolean;
 
 }
 

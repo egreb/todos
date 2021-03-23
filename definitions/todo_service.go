@@ -13,7 +13,7 @@ type TodoService interface {
 
 // GetAllTodosRequest - needs pagination
 type GetAllTodosRequest struct {
-	Completed *bool
+	Completed bool
 }
 
 // GetAllTodosResponse - needs pagination
@@ -33,8 +33,8 @@ type GetTodoResponse struct {
 
 type CreateTodoRequest struct {
 	Title       string
-	Description *string
-	Completed   *bool
+	Description string
+	Completed   bool
 }
 type CreateTodoResponse struct {
 	Todo todo.Todo
